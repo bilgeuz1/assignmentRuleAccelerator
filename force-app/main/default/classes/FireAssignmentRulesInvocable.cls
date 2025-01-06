@@ -6,23 +6,18 @@
  * @since 10/14/2024
  */
 public without sharing class FireAssignmentRulesInvocable {
-    private List<String> allowedObjects = new List<String>{'LEAD', 'CASE'};
+    private final static List<String> allowedObjects = new List<String>{'LEAD', 'CASE'};
+
     /**
      * @description Invocable for flows to allow assignment rules to be run on demand
-     * @param assignmentRuleInput Instance of input object AssignmentRuleInput containing case or lead list and dml options
+     * @param invocableInputs List of input object AssignmentRuleInput containing case or lead list and dml options
      */
-    @Invocablemethod
-    public static void assignRecords(AssignmentRuleInput input) {
-        //Active assignment rules for lead or case
-        input.validate();
-        AssignmentRule assignmentRule = [SELECT Id FROM AssignmentRule WHERE SobjectType = :input.objectName AND Active = true LIMIT 1];
-        Database.DMLOptions dmlOptions = new Database.DMLOptions();
-        dmlOptions.assignmentRuleHeader.assignmentRuleId = assignmentRule.Id;
-        dmlOptions.emailHeader.triggerAutoResponseEmail = input.blnTriggerAutoResponseEmail;
-        dmlOptions.optAllOrNone = input.blnOptAllOrNone;
-        if (!caseOrLeadList.isEmpty()) {
-            Database.update(caseOrLeadList, dmlOptions);
-       }
+    @InvocableMethod
+    public static void assignRecords(List<AssignmentRuleInput> invocableInputs) {
+        for (AssignmentRuleInput input : invocableInputs) {
+            input.validate();
+            FireAssignmentRulesProcessor.processRecordAssignments(input);
+        }
     }
 
 
@@ -34,25 +29,25 @@ public without sharing class FireAssignmentRulesInvocable {
      * - objectName: Name of object type of records in caseOrLeadList
      */
     public class AssignmentRuleInput {
-        @InvocableVariable(required=true)
+        @InvocableVariable(Required=true)
         public List<SObject> caseOrLeadList;
 
-        @InvocableVariable(defaultValue=false)
+        @InvocableVariable(DefaultValue='false')
         public Boolean blnTriggerAutoResponseEmail;
 
-        @InvocableVariable(defaultValue=true description="DML option determining if partial success is allowed. Select FALSE if partial success is allowed.")
+        @InvocableVariable(DefaultValue='true' Description='DML option determining if partial success is allowed. Select FALSE if partial success is allowed.')
         public Boolean blnOptAllOrNone;
 
-        @InvocableVariable(required=true description="Specify if list of records is Case Or Lead")
+        @InvocableVariable(Required=true Description='Specify if list of records is Case Or Lead')
         public String objectName;
 
         /**
-         * @description Method to validate inputs from flow, checks that records are present in caseOrLeadList and the objectName provided is in the allowed objects list. 
+         * @description Method to validate inputs from flow, checks that records are present in caseOrLeadList and the objectName provided is in the allowed objects list.
          *  If either of the checked inputs are not valid an error is thrown
          */
         public void validate() {
             if (this.caseOrLeadList.isEmpty() || !allowedObjects.contains(this.objectName.toUpperCase())) {
-                throw new FireAssignmentRulesInvocableException('Input list should have at least one record and objectName must be Case or Lead');
+                throw new FireAssignmentRulesInvocableException(exceptionMessage);
             }
         }
     }
