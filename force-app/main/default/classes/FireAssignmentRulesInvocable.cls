@@ -8,6 +8,9 @@
 public without sharing class FireAssignmentRulesInvocable {
     private final static List<String> allowedObjects = new List<String>{'LEAD', 'CASE'};
 
+    @TestVisible
+    private final static String exceptionMessage = 'Input list should have at least one record and objectName must be Case or Lead';
+
     /**
      * @description Invocable for flows to allow assignment rules to be run on demand
      * @param invocableInputs List of input object AssignmentRuleInput containing case or lead list and dml options
@@ -55,5 +58,5 @@ public without sharing class FireAssignmentRulesInvocable {
     /**
      * @description Custom exception class
      */
-    class FireAssignmentRulesInvocableException extends Exception {}
+    public class FireAssignmentRulesInvocableException extends Exception {}
 }
